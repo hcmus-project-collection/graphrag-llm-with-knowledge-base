@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from pymilvus import MilvusClient
+from app.constants import MILVUS_HOST, MILVUS_PORT
 
 
 class CollectionNotFoundError(Exception):
@@ -15,7 +16,7 @@ def export_knowledge_base_data(collection: str) -> list[dict]:
     fields_output = ["content", "reference", "hash", "kb"]
 
     cli: MilvusClient = MilvusClient(
-        uri="http://localhost:19530",
+        uri=f"{MILVUS_HOST}:{MILVUS_PORT}",
     )
 
     if not cli.has_collection(collection):

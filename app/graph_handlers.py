@@ -92,7 +92,7 @@ class Triplet(BaseModel):
         }
 
 
-class GraphKnowledge:
+class KnowledgeGraph:
     """Implementation of GraphKnowledge class."""
 
     def __init__(
@@ -276,6 +276,6 @@ class GraphKnowledge:
 
 
 @lru_cache(maxsize=1)
-def get_graph_knowledge() -> GraphKnowledge:
+def get_knowledge_graph() -> KnowledgeGraph:
     """Get a GraphKnowledge instance."""
-    return GraphKnowledge()
+    return KnowledgeGraph()

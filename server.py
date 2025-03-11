@@ -20,17 +20,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-SECRET_TOKEN = os.environ.get("API_SECRET_TOKEN", "")
-
 
 TokenType = Annotated[str | None, Header()]
-
-
-def verify_token(x_token: TokenType = None) -> TokenType:
-    """Verify token."""
-    if x_token != SECRET_TOKEN:
-        raise HTTPException(status_code=400, detail="X-Token header invalid")
-    return x_token
 
 
 class EndpointFilter(logging.Filter):

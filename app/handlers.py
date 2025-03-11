@@ -18,7 +18,7 @@ from app.utils import estimate_ip_from_distance, is_valid_schema
 
 from . import constants as const
 from .embedding import get_default_embedding_model, get_embedding_models
-from .graph_handlers import Triplet, get_graph_knowledge
+from .graph_handlers import Triplet, get_knowledge_graph
 from .models import (
     APIStatus,
     EmbeddedItem,
@@ -100,11 +100,11 @@ async def url_graph_chunking(
     model_use: EmbeddingModel,
 ) -> AsyncGenerator:
     """Chunk the URL and construct graph."""
-    gk = get_graph_knowledge()
+    knowledge_graph = get_knowledge_graph()
     chunks = await call_docling_server(url_or_texts, model_use.tokenizer)
 
     futures = [
-        asyncio.ensure_future(gk.construct_graph_from_chunk(item))
+        asyncio.ensure_future(knowledge_graph.construct_graph_from_chunk(item))
         for item in chunks
     ]
 
@@ -177,11 +177,11 @@ async def insert_to_collection(
         in zip(vectors, raw_texts, heads, tails, kb_postfixes, strict=False)
     ]
 
-    cli: MilvusClient = milvus_kit.get_reusable_milvus_client(
+    milvus_client: MilvusClient = milvus_kit.get_reusable_milvus_client(
         const.MILVUS_HOST,
     )
 
-    res = await sync2async(cli.insert)(
+    res = await sync2async(milvus_client.insert)(
         collection_name=model_use.identity(),
         data=data,
     )
@@ -311,10 +311,10 @@ async def process_text_input(
     """Process a list of texts, construct graphs, and embed them."""
     futures = []
     failed = []
-    gk = get_graph_knowledge()
+    knowledge_graph = get_knowledge_graph()
 
     for item in texts:
-        resp = await gk.construct_graph_from_chunk(item)
+        resp = await knowledge_graph.construct_graph_from_chunk(item)
 
         if resp.status != APIStatus.OK:
             logger.error(
@@ -466,19 +466,19 @@ async def prepare_tasks(
                 )
             )
 
-    download_ft = [] 
+    download_ft = []
     for url in req.file_urls:
         download_ft.append(asyncio.ensure_future(
             download_file_v2(url, tmp_dir),
         ))
 
     files = await asyncio.gather(*download_ft, return_exceptions=True)
-    
+
     for i, file in enumerate(files):
         if isinstance(file, Exception):
             logger.error(f"Failed to download file {req.file_urls[i]}")
             continue
-        
+
         futures.append(  # noqa: PERF401
             asyncio.ensure_future(
                 smaller_task(
@@ -493,10 +493,6 @@ async def prepare_tasks(
         identifiers.append(req.file_urls[i])
 
     return futures, identifiers
-
-
-def create_task(data, kb, model_use, file_identifier):  # noqa
-    return 
 
 
 async def execute_tasks(futures) -> tuple[int, int]:  # noqa: ANN001
@@ -588,8 +584,8 @@ def resume_pending_tasks() -> None:
 
 async def get_collection_num_entities(collection_name: str) -> int:
     """Get number of entities in a collection."""
-    cli = milvus_kit.get_reusable_milvus_client(const.MILVUS_HOST)
-    res = await sync2async(cli.query)(
+    milvus_client = milvus_kit.get_reusable_milvus_client(const.MILVUS_HOST)
+    res = await sync2async(milvus_client.query)(
         collection_name=collection_name,
         output_fields=["count(*)"],
     )
@@ -599,7 +595,7 @@ async def get_collection_num_entities(collection_name: str) -> int:
 def prepare_milvus_collection() -> None:
     """Prepare Milvus collections."""
     models = get_embedding_models()
-    cli: MilvusClient = milvus_kit.get_reusable_milvus_client(
+    milvus_client: MilvusClient = milvus_kit.get_reusable_milvus_client(
         const.MILVUS_HOST,
     )
 
@@ -649,7 +645,7 @@ def prepare_milvus_collection() -> None:
             ],
         )
 
-        if cli.has_collection(identity):
+        if milvus_client.has_collection(identity):
             if is_valid_schema(identity, collection_schema):
                 logger.info(f"Collection {model.identity()} is ready")
                 continue
@@ -658,7 +654,7 @@ def prepare_milvus_collection() -> None:
                     f"Collection {model.identity()} has invalid schema. "
                     "Dropping it",
                 )
-                cli.drop_collection(identity)
+                milvus_client.drop_collection(identity)
 
         index_params = MilvusClient.prepare_index_params(
             field_name="embedding",
@@ -667,7 +663,7 @@ def prepare_milvus_collection() -> None:
             nlist=128,
         )
 
-        cli.create_collection(
+        milvus_client.create_collection(
             collection_name=model.identity(),
             schema=collection_schema,
             index_params=index_params,
@@ -681,7 +677,7 @@ def prepare_milvus_collection() -> None:
 def deduplicate_task() -> None:
     """De-duplicate the data in the collections."""
     models = get_embedding_models()
-    cli: MilvusClient = milvus_kit.get_reusable_milvus_client(
+    milvus_client: MilvusClient = milvus_kit.get_reusable_milvus_client(
         const.MILVUS_HOST,
     )
     fields_output = ["hash", "id", "kb", "head", "tail", "reference"]
@@ -689,14 +685,14 @@ def deduplicate_task() -> None:
     for model in models:
         identity = model.identity()
 
-        if not cli.has_collection(identity):
+        if not milvus_client.has_collection(identity):
             logger.error(f"Collection {identity} not found")
             continue
 
         first_observation = {}
         to_remove_ids = []
 
-        it = cli.query_iterator(
+        it = milvus_client.query_iterator(
             identity,
             output_fields=fields_output,
             batch_size=1000 * 10,
@@ -727,7 +723,7 @@ def deduplicate_task() -> None:
             logger.info(
                 f"Removing {len(to_remove_ids)} duplications in {identity}",
             )
-            cli.delete(
+            milvus_client.delete(
                 collection_name=identity,
                 ids=to_remove_ids,
             )
@@ -745,13 +741,13 @@ async def get_sample(kb: str, k: int) -> list[QueryResult]:
 
     embedding_model = get_default_embedding_model()
     model_identity = embedding_model.identity()
-    cli: MilvusClient = milvus_kit.get_reusable_milvus_client(
+    milvus_client: MilvusClient = milvus_kit.get_reusable_milvus_client(
         const.MILVUS_HOST,
     )
 
     relational_kb = kb  # + const.RELATION_SUFFIX
 
-    results = await sync2async(cli.query)(
+    results = await sync2async(milvus_client.query)(
         model_identity,
         filter=f"kb == {relational_kb!r}",
         output_fields=fields_output,
@@ -777,7 +773,7 @@ async def get_sample(kb: str, k: int) -> list[QueryResult]:
 async def drop_kb(kb: str) -> int:
     """Drop all data from a given knowledge base."""
     models = get_embedding_models()
-    cli: MilvusClient = milvus_kit.get_reusable_milvus_client(
+    milvus_client: MilvusClient = milvus_kit.get_reusable_milvus_client(
         const.MILVUS_HOST,
     )
 
@@ -786,11 +782,11 @@ async def drop_kb(kb: str) -> int:
     for model in models:
         identity = model.identity()
 
-        if not cli.has_collection(identity):
+        if not milvus_client.has_collection(identity):
             logger.error(f"Collection {identity} not found")
             continue
 
-        resp: dict = cli.delete(
+        resp: dict = milvus_client.delete(
             collection_name=identity,
             filter=f"kb == {kb!r}",
         )
@@ -829,7 +825,7 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
     nodes = []
 
     # Extract named entities from the query
-    resp = await get_graph_knowledge().extract_named_entities(req.query)
+    resp = await get_knowledge_graph().extract_named_entities(req.query)
     logger.info(f"NER: {resp.result}")
 
     if resp.status != APIStatus.OK:
@@ -844,12 +840,12 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
         [req.query, *ner_query_list], embedding_model,
     )
 
-    cli: MilvusClient = milvus_kit.get_reusable_milvus_client(
+    milvus_client: MilvusClient = milvus_kit.get_reusable_milvus_client(
         const.MILVUS_HOST,
     )
 
     if len(ner_query_list) > 0:
-        res = await sync2async(cli.search)(
+        res = await sync2async(milvus_client.search)(
             collection_name=model_identity,
             data=embeddings[1:],
             kb_filter=f"kb in {entity_kb}",
@@ -874,7 +870,7 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
     filter_str = f"({filter_str}) or kb in {req.kb}"
     query_embedding = embeddings[0]
 
-    res = await sync2async(cli.search)(
+    res = await sync2async(milvus_client.search)(
         collection_name=model_identity,
         data=[query_embedding],
         filter=filter_str,
@@ -911,5 +907,3 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
         )
         for hit in hits
     ]
-
-

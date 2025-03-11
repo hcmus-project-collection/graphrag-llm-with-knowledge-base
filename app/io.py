@@ -14,13 +14,8 @@ import numpy as np
 from aiofiles import open as aio_open  # For async file operations
 from pymilvus import MilvusClient
 
-from app.models import (
-    InsertInputSchema,
-    QueryInputSchema,
-    UpdateInputSchema,
-)
 from app.utils import limit_asyncio_concurrency, sync2async
-from app.wrappers import milvus_kit, telegram_kit
+from app.wrappers import milvus_kit
 
 from . import constants as const
 
@@ -189,11 +184,11 @@ async def export_collection_data(
     include_identity: bool = False,
 ) -> str:
     """Export collection data."""
-    cli = await get_milvus_client()
-    await ensure_collection_exists(cli, collection)
+    milvus_client = await get_milvus_client()
+    await ensure_collection_exists(milvus_client, collection)
 
     fields_output = get_output_fields(include_embedding, include_identity)
-    it = cli.query_iterator(
+    it = milvus_client.query_iterator(
         collection,
         filter=filter_expr,
         output_fields=fields_output,
@@ -213,52 +208,6 @@ async def export_collection_data(
     log_completion(destination_file, filter_expr, collection)
 
     return destination_file
-
-
-async def notify_action(
-    req: InsertInputSchema | UpdateInputSchema | QueryInputSchema | str,
-) -> None:
-    """Notify action."""
-    if isinstance(req, InsertInputSchema):
-        msg = (
-            f"""<strong>Received a request to insert:</strong>\n
-            <i>
-            <b>ID:</b> {req.id}
-            <b>Texts:</b> {len(req.texts)} (items)
-            <b>Files:</b> {len(req.file_urls)} (files)
-            <b>Knowledge Base:</b> {req.kb}
-            </i>
-            """
-        )
-
-    elif isinstance(req, UpdateInputSchema):
-        msg = (
-            f"""<strong>Received a request to update:</strong>\n
-            <i>
-            <b>ID:</b> {req.id}
-            <b>Texts:</b> {len(req.texts)} (items)
-            <b>Files:</b> {len(req.file_urls)} (files)
-            <b>Knowledge Base:</b> {req.kb}
-            </i>
-            """
-        )
-
-    elif isinstance(req, str):
-        msg = req
-
-    else:
-        logger.error(f"Unsupported type for notification: {type(req)}")
-        return
-
-    await sync2async(telegram_kit.send_message)(
-        msg,
-        room=const.TELEGRAM_ROOM,
-        fmt='HTML',
-        schedule=True,
-        preview_opt={
-            "is_disabled": True,
-        },
-    )
 
 
 async def download_file_v2(url: str, save_dir: str = ".") -> Path:
@@ -323,8 +272,8 @@ async def unescape_html_file(s: str) -> str:
 async def call_docling_server(
     file_path: str,
     embedding_model_name: str,
-    min_chunk_size: int = 10,
-    max_chunk_size: int = 512,
+    min_chunk_size: int = const.MIN_CHUNK_SIZE,
+    max_chunk_size: int = const.MAX_CHUNK_SIZE,
     retry: int = 5,
 ) -> list[str]:
     """Call docling server to chunk the file."""

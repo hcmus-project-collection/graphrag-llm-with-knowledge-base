@@ -10,7 +10,7 @@ from app.state import get_insertion_request_handler
 
 from .embedding import get_default_embedding_model
 from .handlers import drop_kb, get_sample, process_data, run_query
-from .io import export_collection_data, notify_action
+from .io import export_collection_data
 from .models import (
     APIStatus,
     InsertInputSchema,
@@ -46,12 +46,6 @@ async def insert(
         get_default_embedding_model(),
     )
 
-    if not request.is_re_submit:
-        background_tasks.add_task(
-            notify_action,
-            request,
-        )
-
     return ResponseMessage[str](
         result="successfully submitted documents",
         status=APIStatus.OK,
@@ -72,12 +66,6 @@ async def update(
         request,
         get_default_embedding_model(),
     )
-
-    if not request.is_re_submit:
-        background_tasks.add_task(
-            notify_action,
-            request,
-        )
 
     return ResponseMessage[str](
         result="successfully submitted documents",
@@ -106,13 +94,6 @@ async def delete(
     background_tasks: BackgroundTasks,
 ) -> ResponseMessage[str]:
     """Delete all documents in a knowledge base."""
-    background_tasks.add_task(
-        notify_action,
-        (
-            "<strong>Deleting</strong> all documents in knowledge "
-            f"base <strong>{kb}</strong>"
-        ),
-    )
 
     return ResponseMessage[str](
         result=f"{await drop_kb(kb)} documents deleted",
