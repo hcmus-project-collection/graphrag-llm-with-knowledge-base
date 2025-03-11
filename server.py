@@ -10,7 +10,7 @@ import uvicorn
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
 from pymilvus import connections
-
+from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app import constants as const
 
@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.DEBUG if __debug__ else logging.INFO)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 
@@ -99,6 +100,14 @@ if __name__ == "__main__":
     schedule.every(300).minutes.do(deduplicate_task)
 
     api_app = FastAPI()
+    # Allow requests from your frontend
+    api_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],  # Frontend URL
+        allow_credentials=True,
+        allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+        allow_headers=["*"],  # Allow all headers
+    )
     api_app.include_router(app_router)
 
     HOST = os.environ.get("BACKDOOR_HOST", "0.0.0.0")  # noqa: S104
