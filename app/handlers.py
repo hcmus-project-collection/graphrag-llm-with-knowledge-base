@@ -7,7 +7,6 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import httpx
-import requests
 from pymilvus import CollectionSchema, DataType, FieldSchema, MilvusClient
 
 from app.io import (
@@ -799,6 +798,7 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
 
     ner_query_list = resp.result or []
 
+    # Embed the query and the named entities
     embeddings = await mk_cog_embedding_retry_wrapper_prioritized(
         [req.query, *ner_query_list], embedding_model,
     )
@@ -808,8 +808,11 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
     )
 
     if len(ner_query_list) > 0:
+        # Search for the named entities in the vector space
         res = await sync2async(milvus_client.search)(
             collection_name=model_identity,
+            # Using embeddings of extracted entities
+            # # (skipping the query embedding)
             data=embeddings[1:],
             kb_filter=f"kb in {entity_kb}",
             anns_field="embedding",

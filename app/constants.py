@@ -2,16 +2,14 @@
 
 import os
 
-SELF_HOSTED_LLAMA_API_KEY = os.getenv("SELF_HOSTED_LLAMA_API_KEY")
 SELF_HOSTED_EMBEDDING_URL = (
     os.getenv("SELF_HOSTED_EMBEDDING_URL", "").rstrip("/")
 )
 SELF_HOSTED_EMBEDDING_MODEL_ID = os.getenv("SELF_HOSTED_EMBEDDING_MODEL_ID")
 TOKENIZER_MODEL_ID = os.getenv("TOKENIZER_MODEL_ID")
 
-MILVUS_HOST = os.getenv("MILVUS_HOST", "localhost")
+MILVUS_HOST = os.getenv("MILVUS_HOST", "http://localhost")
 MILVUS_PORT = int(os.getenv("MILVUS_PORT", "19530"))
-MILVUS_CONNECTION_ALIAS = os.getenv("MILVUS_CONNECTION_ALIAS", "default")
 
 MODEL_DIMENSION = int(os.getenv("MODEL_DIMENSION", "4096"))
 MODEL_NAME = os.getenv("MODEL_NAME")
@@ -31,17 +29,8 @@ if isinstance(DEFAULT_LLM_MAX_TOKENS, str):
 if isinstance(DEFAULT_LLM_SEED, int):
     DEFAULT_LLM_SEED = int(DEFAULT_LLM_SEED)
 
-CREATE_NEW_IF_NOT_EXISTS = (
-    os.getenv("CREATE_NEW_IF_NOT_EXISTS", "true").lower() == "true"
-)
-
-TELEGRAM_ROOM = os.getenv("TELEGRAM_ROOM")
-TELEGRAM_ALERT_ROOM = os.getenv("TELEGRAM_ALERT_ROOM")
 MIN_CHUNK_SIZE = 10
-
-DEDUPLICATION_CHECK_INTERVAL = int(
-    os.getenv("DEDUPLICATION_CHECK_INTERVAL", "60"),
-)
+MAX_CHUNK_SIZE = 512
 
 DEFAULT_EMBEDDING_BATCH_SIZE = os.getenv("DEFAULT_BATCH_SIZE") or 8
 if isinstance(DEFAULT_EMBEDDING_BATCH_SIZE, str):
@@ -64,9 +53,6 @@ DEFAULT_MILVUS_INSERT_BATCH_SIZE = (
 )
 if isinstance(DEFAULT_MILVUS_INSERT_BATCH_SIZE, str):
     DEFAULT_MILVUS_INSERT_BATCH_SIZE = int(DEFAULT_MILVUS_INSERT_BATCH_SIZE)
-
-API_SECRET_TOKEN = os.getenv("API_SECRET_TOKEN", "dummy_secret_token")
-ETERNALAI_RESULT_HOOK_URL = os.getenv("ETERNALAI_RESULT_HOOK_URL")
 
 GRAPH_SYSTEM_PROMPT = """You are a helpful assistant that can extract relationships from a given text.
 
@@ -139,7 +125,6 @@ NER_SYSTEM_PROMPT = """You are an expert in extracting key nouns, named entities
 ENTITY_SUFFIX = "-entity"
 RELATION_SUFFIX = "-relation"
 
-MAX_NUM_CONCURRENT_PROCESSING_FILES = 2
+
 MAX_NUM_CONCURRENT_LLM_CALL = 16
 DOCLING_SERVER_URL = os.getenv("DOCLING_SERVER_URL", "").rstrip("/")
-GATEWAY_IPFS_PREFIX = "https://gateway.lighthouse.storage/ipfs"
