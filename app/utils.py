@@ -74,23 +74,6 @@ def sync2async(sync_func: Callable) -> Callable:
     )
 
 
-def sync2async_in_subprocess(sync_func: Callable) -> Callable:
-    """Convert sync function to async function in subprocess."""
-    async def async_func(*args, **kwargs) -> Any:
-        wrapper = partial(sync_func, *args, **kwargs)
-
-        with ProcessPoolExecutor(max_workers=1) as executor:
-            return await asyncio.get_event_loop().run_in_executor(
-                executor, wrapper,
-            )
-
-    return (
-        async_func
-        if not asyncio.iscoroutinefunction(sync_func)
-        else sync_func
-    )
-
-
 def limit_asyncio_concurrency(num_of_concurrent_calls: int) -> Callable:
     """Limit asyncio concurrency."""
     semaphore = AsyncSemaphore(num_of_concurrent_calls)
@@ -117,23 +100,6 @@ def get_tmp_directory() -> Path:
 def is_async_func(func: Callable) -> bool:
     """Check if function is async."""
     return asyncio.iscoroutinefunction(func)
-
-
-def background_task_error_handle(handler: Callable) -> Callable:
-    """Implement background task error handler."""
-    def decorator(func: Callable) -> Any:
-        @wraps(func)
-        async def wrapper(*args, **kwargs) -> Any:
-            try:
-                return await func(*args, **kwargs)
-            except Exception as e:
-                res = handler(*args, e, **kwargs)
-
-                if is_async_func(handler):
-                    return await res
-
-        return wrapper
-    return decorator
 
 
 def estimate_ip_from_distance(

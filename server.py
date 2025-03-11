@@ -93,12 +93,10 @@ if __name__ == "__main__":
     from app.handlers import (
         deduplicate_task,
         prepare_milvus_collection,
-        resume_pending_tasks,
     )
     prepare_milvus_collection()
 
     schedule.every(300).minutes.do(deduplicate_task)
-    schedule.every(5).minutes.do(resume_pending_tasks)
 
     api_app = FastAPI()
     api_app.include_router(app_router)

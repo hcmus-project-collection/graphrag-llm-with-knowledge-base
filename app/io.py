@@ -254,20 +254,6 @@ async def download_file(
     logger.info(f"Downloaded {path}")
 
 
-async def unescape_html_file(s: str) -> str:
-    """Unescape HTML file."""
-    if not s.endswith("html"):
-        return s
-
-    with aio_open(s) as f:
-        content = f.read()
-
-    with aio_open(s, "w") as f:
-        await f.write(await sync2async(html.unescape)(content))
-
-    return s
-
-
 @limit_asyncio_concurrency(4)
 async def call_docling_server(
     file_path: str,

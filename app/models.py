@@ -174,13 +174,6 @@ class SearchRequest(BaseModel):
     kwargs: dict[str, Any] | None = None
 
 
-class ChunkScore(BaseModel):
-    """Model for representation of chunk score."""
-
-    score: float
-    chunk_id: str
-
-
 class ResponseMessage(BaseModel, Generic[_generic_type]):
     """Model for representation of response message."""
 
@@ -203,35 +196,6 @@ class InsertionCounter:
     def __init__(self) -> None:
         self.total = 0
         self.fails = 0
-
-
-class InsertResponse(BaseModel):
-    """Model for representation of insert response.
-
-    InsertResponse represents the data returned after an artifact
-    insertion operation.
-
-    Attributes
-        ref (str): Reference identifier for the inserted artifact.
-        kb (Optional[str]): Knowledge base identifier, if applicable.
-        message (Optional[str]): Additional information about the
-        insertion result.
-        artifact_submitted (bool): Indicates whether the artifact was
-        successfully submitted.
-
-    """
-
-    kb: str
-    message: str | None = ""
-    details: list[CollectionInspection] = []
-
-
-class InsertProgressCallback(BaseModel):
-    """Model for representation of insert progress callback."""
-
-    kb: str
-    identifier: str
-    message: str | None = ""
 
 
 class QueryResult(BaseModel):

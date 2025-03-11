@@ -555,43 +555,6 @@ async def process_data(
         cleanup_temp_directory(tmp_dir, req.id)
 
 
-def resume_pending_tasks() -> None:
-    """Resume pending tasks."""
-    if len(_running_tasks) > 0:
-        return
-
-    logger.info("Scanning for pending tasks...")
-    handler = get_insertion_request_handler()
-
-    logger.info(f"Found {len(handler.get_all())} pending tasks")
-    pending_tasks = handler.get_all()
-
-    for task in pending_tasks[::-1]:
-        if task.id in _running_tasks:
-            continue
-
-        # TODO: change this  # noqa: TD002
-        logger.info(f"Resuming task {task.id}")
-        requests.post(
-            "http://localhost:8000/api/insert",
-            json={
-                **task.model_dump(),
-                "is_re_submit": True,
-            },
-            timeout=5,
-        )
-
-
-async def get_collection_num_entities(collection_name: str) -> int:
-    """Get number of entities in a collection."""
-    milvus_client = milvus_kit.get_reusable_milvus_client(const.MILVUS_HOST)
-    res = await sync2async(milvus_client.query)(
-        collection_name=collection_name,
-        output_fields=["count(*)"],
-    )
-    return res[0]["count(*)"]
-
-
 def prepare_milvus_collection() -> None:
     """Prepare Milvus collections."""
     models = get_embedding_models()
