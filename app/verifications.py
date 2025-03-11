@@ -9,7 +9,7 @@ from . import constants as const
 SECRET_TOKEN = const.API_SECRET_TOKEN
 sha256_of_secret_token = sha256(SECRET_TOKEN.encode()).hexdigest()
 
-TokenType = TypeVar("TokenType", Annotated[str | None, Header()])
+TokenType = Annotated[str | None, Header()]
 
 
 async def verify_opencall_x_token(x_token: TokenType = None) -> TokenType:

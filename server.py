@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 SECRET_TOKEN = os.environ.get("API_SECRET_TOKEN", "")
 
 
-TokenType = TypeVar(Annotated[str | None, Header()])
+TokenType = Annotated[str | None, Header()]
 
 
 def verify_token(x_token: TokenType = None) -> TokenType:

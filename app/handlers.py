@@ -12,7 +12,6 @@ from pymilvus import CollectionSchema, DataType, FieldSchema, MilvusClient
 
 from app.io import (
     call_docling_server,
-    download_and_extract_from_filecoin,
     download_file_v2,
     hook,
 )
@@ -26,7 +25,6 @@ from .models import (
     CollectionInspection,
     EmbeddedItem,
     EmbeddingModel,
-    FilecoinData,
     GraphEmbeddedItem,
     InsertInputSchema,
     InsertionCounter,
@@ -397,14 +395,12 @@ async def smaller_task(
     kb: str,
     model_use: EmbeddingModel,
     file_identifier: str = "",
-    request_identifier: str | None = None,
 ) -> tuple[int, int]:
     """Implement logic for smaller task."""
-    if isinstance(url_or_texts, str) and request_identifier is not None:
+    if isinstance(url_or_texts, str):
         await hook(
             ResponseMessage[InsertProgressCallback](
                 result=InsertProgressCallback(
-                    ref=request_identifier,
                     kb=kb,
                     identifier=file_identifier,
                     message=f"Start processing file {file_identifier}",
@@ -453,7 +449,6 @@ async def smaller_task(
         await hook(
             ResponseMessage[InsertProgressCallback](
                 result=InsertProgressCallback(
-                    ref=request_identifier,
                     message=(
                         f"Completed processing file {file_identifier}"
                         if n_inserted_chunks > 0 else
@@ -522,40 +517,14 @@ def log_request_info(req: InsertInputSchema) -> None:
     )
 
 
-async def handle_filecoin_files(
-    req: InsertInputSchema,
-    tmp_dir: str,
-) -> list[FilecoinData]:
-    """Handle Filecoin files."""
-    if req.filecoin_metadata_url:
-        return await download_and_extract_from_filecoin(
-            req.filecoin_metadata_url,
-            tmp_dir,
-        )
-    return []
-
-
 def prepare_tasks(
     req: InsertInputSchema,
-    filecoin_files: list,
     tmp_dir: str,
     model_use: EmbeddingModel,
 ) -> tuple[list, list]:
     """Prepare tasks."""
     futures = []
     identifiers = []
-
-    for fc_file in filecoin_files:
-        futures.append(
-            create_task(
-                fc_file.address,
-                req.kb,
-                model_use,
-                fc_file.identifier,
-                req.ref,
-            ),
-        )
-        identifiers.append(fc_file.identifier)
 
     # Text chunks
     sqrt_length_texts = int(len(req.texts) ** 0.5)
@@ -584,7 +553,7 @@ def prepare_tasks(
     return futures, identifiers
 
 
-def create_task(data, kb, model_use, file_identifier, request_identifier):  # noqa
+def create_task(data, kb, model_use, file_identifier):  # noqa
     return asyncio.ensure_future(
         smaller_task(
             data,
@@ -672,10 +641,8 @@ async def process_data(
 
     try:
         log_request_info(req)
-        filecoin_files = await handle_filecoin_files(req, tmp_dir)
         futures, identifiers = prepare_tasks(
             req,
-            filecoin_files,
             tmp_dir,
             model_use,
         )

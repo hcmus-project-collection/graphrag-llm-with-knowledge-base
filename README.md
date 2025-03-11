@@ -21,13 +21,13 @@ rm ~/miniconda3/miniconda.sh
 - Create a new environment
 
 ```bash
-conda create -n ehe python==3.10 -y
+conda create -n llmkb python==3.12 -y
 ```
 
-- Activate `ehe`
+- Activate `llmkb`
 
 ```bash
-conda activate ehe
+conda activate llmkb
 ```
 
 - Install dependencies

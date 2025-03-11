@@ -42,7 +42,6 @@ class InsertInputSchema(BaseModel):
     file_urls: list[str] = []
     texts: list[str] = []
     kb: str | None = None
-    filecoin_metadata_url: str | None = None
 
     # ref and kb must not be both None
     ref: str | None = None
@@ -82,7 +81,6 @@ class UpdateInputSchema(BaseModel):
     id: str = Field(default_factory=lambda: f"doc-{uuid.uuid4().hex!s}")
     file_urls: list[str] = []
     texts: list[str] = []
-    filecoin_metadata_url: str | None = None
 
     # ref and kb must not be both None
     ref: str | None = None
@@ -241,7 +239,6 @@ class InsertResponse(BaseModel):
 class InsertProgressCallback(BaseModel):
     """Model for representation of insert progress callback."""
 
-    ref: str
     kb: str
     identifier: str
     message: str | None = ""
@@ -253,24 +250,3 @@ class QueryResult(BaseModel):
     content: str
     score: float
     reference: str | None = None
-
-
-class FilecoinData(BaseModel):
-    """Model for representation of Filecoin data."""
-
-    identifier: str
-    address: str
-
-    @model_validator(mode="before")
-    def validate_address(self, data: dict):
-        """Validate the address."""
-        if not isinstance(data, dict):
-            raise TypeError("Data must be a dictionary")
-
-        if "address" not in data:
-            raise ValueError("Address must be provided")
-
-        if isinstance(data["address"], Path):
-            data["address"] = str(data["address"])
-
-        return data

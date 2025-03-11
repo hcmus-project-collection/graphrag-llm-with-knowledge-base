@@ -18,7 +18,6 @@ from aiofiles import open as aio_open  # For async file operations
 from pymilvus import MilvusClient
 
 from app.models import (
-    FilecoinData,
     InsertInputSchema,
     InsertProgressCallback,
     InsertResponse,
@@ -278,9 +277,7 @@ async def notify_action(
             <b>ID:</b> {req.id}
             <b>Texts:</b> {len(req.texts)} (items)
             <b>Files:</b> {len(req.file_urls)} (files)
-            <b>Filecoin metadata url:</b> {req.filecoin_metadata_url}
             <b>Knowledge Base:</b> {req.kb}
-            <b>Reference:</b> {req.ref}
             <b>Hook:</b> <a href="{req.hook}">{req.hook}</a>
             </i>
             """
@@ -293,9 +290,7 @@ async def notify_action(
             <b>ID:</b> {req.id}
             <b>Texts:</b> {len(req.texts)} (items)
             <b>Files:</b> {len(req.file_urls)} (files)
-            <b>Filecoin metadata url:</b> {req.filecoin_metadata_url}
             <b>Knowledge Base:</b> {req.kb}
-            <b>Reference:</b> {req.ref}
             <b>Hook:</b> <a href="{req.hook}">{req.hook}</a>
             </i>
             """
@@ -373,120 +368,6 @@ async def unescape_html_file(s: str) -> str:
         await f.write(await sync2async(html.unescape)(content))
 
     return s
-
-
-async def download_filecoin_item(
-    metadata: dict,
-    tmp_dir: str,
-    session: httpx.AsyncClient,
-    identifier: str,
-) -> FilecoinData | None:
-    """Download Filecoin item."""
-    if metadata["is_part"]:
-        parts = sorted(metadata["files"], key=lambda x: x["index"])
-        zip_parts, tasks = [], []
-
-        for part in parts:
-            part_url = f"{const.GATEWAY_IPFS_PREFIX}/{part['hash']}"
-            part_path = Path(tmp_dir) / part['name']
-            tasks.append(download_file(session, part_url, part_path))
-            zip_parts.append(part_path)
-
-        await asyncio.gather(*tasks)
-
-        name = metadata['name']
-        destination = Path(tmp_dir) / name
-        command = (
-            f"cat {tmp_dir}/{name}.zip.part-* | pigz -p 2 -d | tar -xf - "
-            f"-C {tmp_dir}"
-        )
-
-        await sync2async(subprocess.run)(
-            command,
-            shell=True,  # noqa: S604
-            check=True,
-        )
-
-        logger.info(f"Successfully extracted files to {destination}")
-        afiles = []
-
-        for root, _, files in os.walk(destination):
-            for file in files:
-                fpath = Path(root) / file
-                await unescape_html_file(str(fpath))
-                afiles.append(fpath)
-
-        if len(afiles) > 0:
-            return FilecoinData(
-                identifier=identifier,
-                address=afiles[0],
-            )
-
-        logger.warning(f"No files extracted from {destination}")
-
-    else:
-        url = f"{const.GATEWAY_IPFS_PREFIX}/{metadata['files'][0]['hash']}"
-        path = Path(tmp_dir) / metadata['files'][0]['name']
-
-        try:
-            await download_file(session, url, path)
-        except Exception:
-            logger.exception("Failed to pull file from lighthouse")
-            return None
-
-        await unescape_html_file(str(path))
-
-        return FilecoinData(
-            identifier=identifier,
-            address=path,
-        )
-
-    return None
-
-
-async def download_and_extract_from_filecoin(
-    url: str,
-    tmp_dir: str,
-    ignore_inserted: bool = True,
-) -> list[FilecoinData]:
-    """Download and extract files from Filecoin."""
-    list_files: list[FilecoinData] = []
-
-    pat = re.compile(r"ipfs/(.+)")
-    cid = pat.search(url).group(1)
-
-    if not cid:
-        raise ValueError(f"Invalid filecoin url: {url}")
-
-    async with httpx.AsyncClient() as session:
-        response = await session.get(url)
-
-        if response.status_code != 200:
-            raise ValueError(
-                f"Failed to get metadata from {url}; Reason: {response.text}",
-            )
-
-        list_metadata = json.loads(response.content)
-
-        for file_index, metadata in enumerate(list_metadata):
-            metadata: dict
-            logger.info(metadata)
-
-            if ignore_inserted and metadata.get("is_inserted", False):
-                continue
-
-            fcdata = await download_filecoin_item(
-                metadata,
-                tmp_dir,
-                session,
-                identifier=f"{cid}/{file_index}",
-            )
-
-            if fcdata is not None:
-                list_files.append(fcdata)
-
-    logger.info(f"List of files to be processed: {list_files}")
-    return list_files
 
 
 @limit_asyncio_concurrency(4)
