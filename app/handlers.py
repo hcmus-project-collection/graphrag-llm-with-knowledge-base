@@ -3,7 +3,7 @@ import json
 import logging
 import random
 import shutil
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import httpx
@@ -13,7 +13,6 @@ from pymilvus import CollectionSchema, DataType, FieldSchema, MilvusClient
 from app.io import (
     call_docling_server,
     download_file_v2,
-    hook,
 )
 from app.utils import estimate_ip_from_distance, is_valid_schema
 
@@ -22,14 +21,11 @@ from .embedding import get_default_embedding_model, get_embedding_models
 from .graph_handlers import Triplet, get_graph_knowledge
 from .models import (
     APIStatus,
-    CollectionInspection,
     EmbeddedItem,
     EmbeddingModel,
     GraphEmbeddedItem,
     InsertInputSchema,
     InsertionCounter,
-    InsertProgressCallback,
-    InsertResponse,
     QueryInputSchema,
     QueryResult,
     ResponseMessage,
@@ -397,18 +393,6 @@ async def smaller_task(
     file_identifier: str = "",
 ) -> tuple[int, int]:
     """Implement logic for smaller task."""
-    if isinstance(url_or_texts, str):
-        await hook(
-            ResponseMessage[InsertProgressCallback](
-                result=InsertProgressCallback(
-                    kb=kb,
-                    identifier=file_identifier,
-                    message=f"Start processing file {file_identifier}",
-                ),
-                status=APIStatus.PROCESSING,
-            ),
-        )
-
     counter = InsertionCounter()
     async for data in async_batching(
         chunking_and_embedding(
@@ -436,66 +420,7 @@ async def smaller_task(
         f"Fail: {counter.fails} (chunks)",
     )
 
-    if isinstance(url_or_texts, str) and request_identifier is not None:
-        n_inserted_chunks = counter.total - counter.fails
-
-        status = APIStatus.OK if n_inserted_chunks > 0 else APIStatus.ERROR
-        reason = (
-            ""
-            if status == APIStatus.OK
-            else "No data read from the provided file"
-        )
-
-        await hook(
-            ResponseMessage[InsertProgressCallback](
-                result=InsertProgressCallback(
-                    message=(
-                        f"Completed processing file {file_identifier}"
-                        if n_inserted_chunks > 0 else
-                        (
-                            f"Failed to process file {file_identifier} "
-                            f"(Reason: {reason})"
-                        )
-                    ),
-                    kb=kb,
-                    identifier=file_identifier,
-                ),
-                status=status,
-            ),
-        )
-
     return (counter.total, counter.fails)
-
-
-async def inspect_by_file_identifier(
-    file_identifier: str,
-) -> CollectionInspection:
-    """Inspect by file identifier."""
-    milvus_cli = milvus_kit.get_reusable_milvus_client(const.MILVUS_HOST)
-
-    it = milvus_cli.query_iterator(
-        collection_name=get_default_embedding_model().identity(),
-        filter=f"reference == {file_identifier!r}",
-        output_fields=["hash"],
-        batch_size=1000 * 10,
-    )
-
-    hashs = set()
-
-    while True:
-        batch = await sync2async(it.next)()
-
-        if len(batch) == 0:
-            break
-
-        for item in batch:
-            hashs.add(item['hash'])
-
-    return CollectionInspection(
-        file_ref=file_identifier,
-        message=f"Has {len(hashs)} unique chunk(s)",
-        status=APIStatus.OK if len(hashs) > 0 else APIStatus.ERROR,
-    )
 
 
 def setup_temp_directory() -> str:
@@ -528,10 +453,11 @@ def prepare_tasks(
 
     # Text chunks
     sqrt_length_texts = int(len(req.texts) ** 0.5)
-    for chunk in batching(req.texts, sqrt_length_texts):
-        futures.append(  # noqa: PERF401
-            create_task(chunk, req.kb, model_use, "", req.ref),
-        )
+    if sqrt_length_texts > 0:
+        for chunk in batching(req.texts, sqrt_length_texts):
+            futures.append(  # noqa: PERF401
+                create_task(chunk, req.kb, model_use, ""),
+            )
 
     for url in req.file_urls:
         try:
@@ -543,7 +469,6 @@ def prepare_tasks(
                 req.kb,
                 model_use,
                 url,
-                req.ref,
             )
             futures.append(awaitable_task)
             identifiers.append(url)
@@ -560,7 +485,6 @@ def create_task(data, kb, model_use, file_identifier):  # noqa
             kb,
             model_use,
             file_identifier=file_identifier,
-            request_identifier=request_identifier,
         ),
     )
 
@@ -581,39 +505,6 @@ async def execute_tasks(futures) -> tuple[int, int]:  # noqa: ANN001
                 fails_count += fails
 
     return n_chunks, fails_count
-
-
-async def send_hook_if_needed(
-    req: InsertInputSchema,
-    n_chunks: int,
-    fails_count: int,
-    identifiers: Sequence,
-) -> None:
-    """Send hook if needed."""
-    if req.hook:
-        response = ResponseMessage[InsertResponse](
-            result=InsertResponse(
-                ref=req.ref,
-                message=(
-                    f"Inserted {n_chunks - fails_count} chunks; "
-                    f"Failed {fails_count} chunks; "
-                    f"Total: {n_chunks} chunks; "
-                    f"{len(req.file_urls) + len(identifiers)} files."
-                ),
-                kb=req.kb,
-                details=[
-                    await inspect_by_file_identifier(identifier)
-                    for identifier in identifiers
-                ],
-            ),
-            status=(
-                APIStatus.OK
-                if (n_chunks - fails_count) > 0
-                else APIStatus.ERROR
-            ),
-        )
-        hook_result = await hook(response)
-        logger.info(f"Hook status: {hook_result}")
 
 
 async def cleanup_request(task_id: str) -> None:
@@ -646,15 +537,10 @@ async def process_data(
             tmp_dir,
             model_use,
         )
+        print(futures, identifiers)
 
         n_chunks, fails_count = await execute_tasks(futures)
 
-        await send_hook_if_needed(
-            req,
-            n_chunks,
-            fails_count,
-            identifiers,
-        )
         await cleanup_request(req.id)
         return n_chunks
 

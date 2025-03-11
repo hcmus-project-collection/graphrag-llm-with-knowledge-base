@@ -36,6 +36,7 @@ async def insert(
     background_tasks: BackgroundTasks,
 ) -> ResponseMessage[str]:
     """Implement logic for inserting documents."""
+    print(f"REQUEST: {request}")
     handler = get_insertion_request_handler()
     handler.insert(request)
 

@@ -67,7 +67,7 @@ class Triplet(BaseModel):
         return f"{self.s1} {self.relation} {self.s2}"
 
     @model_validator(mode="before")
-    def from_list(self, data: list[str] | dict[str, str]) -> dict[str, str]:
+    def from_list(cls, data: list[str] | dict[str, str]) -> dict[str, str]:
         """Construct triplet from a list or dictionary."""
         if isinstance(data, list):
             assert len(data) >= 3 and all(  # noqa: PT018, S101

@@ -2,9 +2,6 @@ import asyncio
 import html
 import json
 import logging
-import os
-import re
-import subprocess
 import time
 import zipfile
 from collections.abc import Callable
@@ -19,10 +16,7 @@ from pymilvus import MilvusClient
 
 from app.models import (
     InsertInputSchema,
-    InsertProgressCallback,
-    InsertResponse,
     QueryInputSchema,
-    ResponseMessage,
     UpdateInputSchema,
 )
 from app.utils import limit_asyncio_concurrency, sync2async
@@ -221,51 +215,6 @@ async def export_collection_data(
     return destination_file
 
 
-async def hook(
-    resp: ResponseMessage[InsertResponse | InsertProgressCallback],
-) -> bool:
-    """Implement hook."""
-    body: dict = resp.model_dump()
-
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            const.ETERNALAI_RESULT_HOOK_URL,
-            json=body,
-        )
-
-    msg = (
-        """
-        Callback <a href="{hook_url}">{hook_url}</a>:
-
-        Request:
-        <pre>
-        {json_log}
-        </pre>
-
-        Response:
-        <pre>
-        {response}
-        </pre>
-    """.format(
-            hook_url=const.ETERNALAI_RESULT_HOOK_URL,
-            json_log=json.dumps(body, indent=2),
-            response=response.text,
-        )
-    )
-
-    telegram_kit.send_message(
-        msg,
-        room=const.TELEGRAM_ROOM,
-        schedule=True,
-    )
-
-    if response.status_code != 200:
-        logger.error(f"Failed to send hook response: {response.text}")
-        return False
-
-    return True
-
-
 async def notify_action(
     req: InsertInputSchema | UpdateInputSchema | QueryInputSchema | str,
 ) -> None:
@@ -278,7 +227,6 @@ async def notify_action(
             <b>Texts:</b> {len(req.texts)} (items)
             <b>Files:</b> {len(req.file_urls)} (files)
             <b>Knowledge Base:</b> {req.kb}
-            <b>Hook:</b> <a href="{req.hook}">{req.hook}</a>
             </i>
             """
         )
@@ -291,7 +239,6 @@ async def notify_action(
             <b>Texts:</b> {len(req.texts)} (items)
             <b>Files:</b> {len(req.file_urls)} (files)
             <b>Knowledge Base:</b> {req.kb}
-            <b>Hook:</b> <a href="{req.hook}">{req.hook}</a>
             </i>
             """
         )
@@ -328,6 +275,8 @@ async def download_file_v2(url: str, save_dir: str = ".") -> Path:
         else:
             # Otherwise, extract from URL path
             filename = Path(urlparse(url).path).name or "downloaded_file"
+
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
 
         save_path = Path(save_dir) / filename
 

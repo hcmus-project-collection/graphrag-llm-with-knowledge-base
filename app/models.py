@@ -1,7 +1,6 @@
 import string
 import uuid
 from enum import Enum
-from pathlib import Path
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, model_validator
@@ -43,14 +42,10 @@ class InsertInputSchema(BaseModel):
     texts: list[str] = []
     kb: str | None = None
 
-    # ref and kb must not be both None
-    ref: str | None = None
-    hook: str | None = None
-
     is_re_submit: bool = False
 
     @model_validator(mode="before")
-    def fill_texts(self, data: dict):
+    def fill_texts(cls, data: dict):
         """Fill data into texts."""
         if not isinstance(data, dict):
             raise TypeError("Data must be a dictionary")
@@ -69,7 +64,7 @@ class InsertInputSchema(BaseModel):
         if data.get("kb", "") == "":
             data["kb"] = "kb-" + data["ref"]
 
-        if len(data["kb"] > 0):
+        if len(data["kb"]) == 0:
             raise ValueError("Knowledge base must not be empty")
         return data
 
@@ -82,14 +77,10 @@ class UpdateInputSchema(BaseModel):
     file_urls: list[str] = []
     texts: list[str] = []
 
-    # ref and kb must not be both None
-    ref: str | None = None
-    hook: str | None = None
-
     is_re_submit: bool = False
 
     @model_validator(mode="before")
-    def fill_texts(self, data: dict):
+    def fill_texts(cls, data: dict):
         """Fill data into texts."""
         if not isinstance(data, dict):
             raise TypeError("Data must be a dictionary")
@@ -125,7 +116,7 @@ class QueryInputSchema(BaseModel):
         return hash(f"{self.query}{self.top_k}{self.threshold}{kbs_str}")
 
     @model_validator(mode="before")
-    def fill_kb(self, data: dict):
+    def fill_kb(cls, data: dict):
         """Fill data into knowledge base."""
         if not isinstance(data, dict):
             raise TypeError("Data must be a dictionary")
@@ -230,7 +221,6 @@ class InsertResponse(BaseModel):
 
     """
 
-    ref: str
     kb: str
     message: str | None = ""
     details: list[CollectionInspection] = []

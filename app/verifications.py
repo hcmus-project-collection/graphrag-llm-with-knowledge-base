@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from hashlib import sha256
-from typing import Annotated, TypeVar
+from typing import Annotated
 
 from fastapi import Header, HTTPException
 

@@ -3,7 +3,7 @@ import logging
 import os
 import threading
 import time
-from typing import Annotated, TypeVar
+from typing import Annotated
 
 import schedule
 import uvicorn
@@ -143,6 +143,7 @@ if __name__ == "__main__":
         log_level="info",
         timeout_keep_alive=300,
         log_config=logging_config,
+        reload=True,
     )
 
     server = uvicorn.Server(config)
