@@ -1,56 +1,58 @@
-# ETH Search
+# Large Language Model with Knowledge Base
 
-## Prerequisite
+This is a project of large language model associated with knowledge base, or in some sense, this is
+an RAG (Retrieval-Augmented Generation) application.
 
-python 3.10+
+## Tech Stacks:
+- FastAPi
+- Milvus vector database
+- Knowledge Graph
+- Frontend: ReactJS
 
-## Setup
+## Running the server
+### System Requirements
+First of all, you need a Python (version 3.10 or later) installed. It is recommended to use a virtual environment, such as [conda](https://www.anaconda.com/docs/getting-started/miniconda/main) or [uv](https://astral.sh/blog/uv).
+You will also need Docker installed on your system.
 
-- Install conda (if not yet)
-
-```bash
-mkdir -p ~/miniconda3
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-rm ~/miniconda3/miniconda.sh
-
-# link conda to shells
-~/miniconda3/bin/conda init --all
-```
-
-- Create a new environment
+### Install `conda` environment
+Check [this docs](https://www.anaconda.com/docs/getting-started/miniconda/main) for `conda` installation guide.
+After `conda` is installed, let's create a virtual environment for this project.
 
 ```bash
 conda create -n llmkb python==3.12 -y
 ```
-
-- Activate `llmkb`
-
 ```bash
 conda activate llmkb
 ```
 
-- Install dependencies
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-## Debugging
-
-- Host a milvus server:
-
+### Setup Docker for Milvus
 ```bash
 
 # for the latest version, checkout https://milvus.io/docs/install_standalone-docker-compose.md
 wget https://github.com/milvus-io/milvus/releases/download/v2.5.0-beta/milvus-standalone-docker-compose.yml -O docker-compose.yml
-
-# run the compose
+```
+Build the Docker container
+```bash
 docker-compose -f docker-compose.yml up -d
 ```
-
-- Run the server:
-
+### Install requirement packages
+```bash
+pip install -r requirements.txt
+```
+### Run the server
 ```bash
 python -O server.py
+```
+
+## Running the frontend
+### System Requirements
+You need to have Node.js installed on your system. You can download it from [here](https://nodejs.org/en/download/).
+### Install dependencies
+```bash
+cd frontend
+npm install
+```
+### Run the frontend
+```bash
+npm start
 ```
