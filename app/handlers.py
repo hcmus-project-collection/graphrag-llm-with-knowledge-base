@@ -442,7 +442,7 @@ def log_request_info(req: InsertInputSchema) -> None:
     )
 
 
-def prepare_tasks(
+async def prepare_tasks(
     req: InsertInputSchema,
     tmp_dir: str,
     model_use: EmbeddingModel,
@@ -456,37 +456,47 @@ def prepare_tasks(
     if sqrt_length_texts > 0:
         for chunk in batching(req.texts, sqrt_length_texts):
             futures.append(  # noqa: PERF401
-                create_task(chunk, req.kb, model_use, ""),
+                asyncio.ensure_future(
+                    smaller_task(
+                        chunk,
+                        req.kb,
+                        model_use,
+                        file_identifier="",
+                    ),
+                )
             )
 
+    download_ft = [] 
     for url in req.file_urls:
-        try:
-            local_filepath = asyncio.ensure_future(
-                download_file_v2(url, tmp_dir),
+        download_ft.append(asyncio.ensure_future(
+            download_file_v2(url, tmp_dir),
+        ))
+
+    files = await asyncio.gather(*download_ft, return_exceptions=True)
+    
+    for i, file in enumerate(files):
+        if isinstance(file, Exception):
+            logger.error(f"Failed to download file {req.file_urls[i]}")
+            continue
+        
+        futures.append(  # noqa: PERF401
+            asyncio.ensure_future(
+                smaller_task(
+                    str(file),
+                    req.kb,
+                    model_use,
+                    file_identifier=req.file_urls[i],
+                ),
             )
-            awaitable_task = create_task(
-                local_filepath,
-                req.kb,
-                model_use,
-                url,
-            )
-            futures.append(awaitable_task)
-            identifiers.append(url)
-        except Exception:
-            logger.exception(f"Failed to download {url} to read locally")
+        )
+
+        identifiers.append(req.file_urls[i])
 
     return futures, identifiers
 
 
 def create_task(data, kb, model_use, file_identifier):  # noqa
-    return asyncio.ensure_future(
-        smaller_task(
-            data,
-            kb,
-            model_use,
-            file_identifier=file_identifier,
-        ),
-    )
+    return 
 
 
 async def execute_tasks(futures) -> tuple[int, int]:  # noqa: ANN001
@@ -532,7 +542,7 @@ async def process_data(
 
     try:
         log_request_info(req)
-        futures, identifiers = prepare_tasks(
+        futures, identifiers = await prepare_tasks(
             req,
             tmp_dir,
             model_use,

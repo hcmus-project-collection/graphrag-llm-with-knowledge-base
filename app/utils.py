@@ -43,7 +43,7 @@ def batching(data: Generator, batch_size: int = 1) -> Generator:
 async def async_batching(
     data: AsyncGenerator,
     batch_size: int = 1,
-) -> Generator:
+) -> AsyncGenerator:
     """Implement async batching."""
     current_batch = []
 
