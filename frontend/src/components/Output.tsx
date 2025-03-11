@@ -7,10 +7,19 @@ interface OutputProps {
 
 const Output: React.FC<OutputProps> = ({ response, results }) => (
     <div className="output-container">
+        {/* For submission success message */}
+        {response?.result && typeof response.result === 'string' && (
+            <div className="response">
+                <h3>Response</h3>
+                <p>{response.result}</p>
+            </div>
+        )}
+
+        {/* For query results */}
         {results.length > 0 && (
             <div className="results">
                 <h3>Results:</h3>
-                {results.map((item: any, index: number) => (
+                {results.map((item, index) => (
                     <div key={index} className="result-item">
                         <p><strong>Content:</strong> {item.content}</p>
                         <p><strong>Score:</strong> {item.score}</p>
