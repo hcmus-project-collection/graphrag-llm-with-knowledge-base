@@ -5,7 +5,6 @@ import time
 import traceback
 from asyncio import Semaphore as AsyncSemaphore
 from collections.abc import AsyncGenerator, Callable, Generator
-from concurrent.futures import ProcessPoolExecutor
 from functools import partial, wraps
 from hashlib import md5
 from pathlib import Path

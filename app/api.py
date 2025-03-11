@@ -36,7 +36,6 @@ async def insert(
     background_tasks: BackgroundTasks,
 ) -> ResponseMessage[str]:
     """Implement logic for inserting documents."""
-    print(f"REQUEST: {request}")
     handler = get_insertion_request_handler()
     handler.insert(request)
 
@@ -94,7 +93,6 @@ async def delete(
     background_tasks: BackgroundTasks,
 ) -> ResponseMessage[str]:
     """Delete all documents in a knowledge base."""
-
     return ResponseMessage[str](
         result=f"{await drop_kb(kb)} documents deleted",
     )

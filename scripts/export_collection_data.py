@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from pymilvus import MilvusClient
+
 from app.constants import MILVUS_HOST, MILVUS_PORT
 
 

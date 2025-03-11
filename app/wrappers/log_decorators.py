@@ -4,7 +4,6 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
 )

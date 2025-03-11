@@ -462,7 +462,7 @@ async def prepare_tasks(
                         model_use,
                         file_identifier="",
                     ),
-                )
+                ),
             )
 
     download_ft = []
@@ -478,7 +478,7 @@ async def prepare_tasks(
             logger.error(f"Failed to download file {req.file_urls[i]}")
             continue
 
-        futures.append(  # noqa: PERF401
+        futures.append(
             asyncio.ensure_future(
                 smaller_task(
                     str(file),
@@ -486,7 +486,7 @@ async def prepare_tasks(
                     model_use,
                     file_identifier=req.file_urls[i],
                 ),
-            )
+            ),
         )
 
         identifiers.append(req.file_urls[i])
@@ -537,14 +537,13 @@ async def process_data(
 
     try:
         log_request_info(req)
-        futures, identifiers = await prepare_tasks(
+        futures, _ = await prepare_tasks(
             req,
             tmp_dir,
             model_use,
         )
-        print(futures, identifiers)
 
-        n_chunks, fails_count = await execute_tasks(futures)
+        n_chunks, _ = await execute_tasks(futures)
 
         await cleanup_request(req.id)
         return n_chunks

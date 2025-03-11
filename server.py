@@ -7,10 +7,11 @@ from typing import Annotated
 
 import schedule
 import uvicorn
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymilvus import connections
-from fastapi.middleware.cors import CORSMiddleware
+
 from app import __version__
 from app import constants as const
 
