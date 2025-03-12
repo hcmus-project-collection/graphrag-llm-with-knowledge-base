@@ -17,11 +17,11 @@ const PDFUploader: React.FC<PdfUploaderProps> = ({ onUploadComplete }) => {
     const uploadToCloudinary = async (file: File) => {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('upload_preset', 'pdfdocuments'); // Your Cloudinary preset
+        formData.append('upload_preset', process.env.REACT_APP_CLOUDINARY_PRESET || '');
 
         try {
             const response = await axios.post(
-                'https://api.cloudinary.com/v1_1/dh6n8cuqo/raw/upload', // For PDF files
+                `https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_CLOUD_NAME}/raw/upload`,
                 formData
             );
 
@@ -49,7 +49,11 @@ const PDFUploader: React.FC<PdfUploaderProps> = ({ onUploadComplete }) => {
                 is_re_submit: false,
             };
 
-            const res = await axios.post('http://localhost:8000/api/insert', payload);
+            // const res = await axios.post('http://localhost:8000/api/insert', payload);
+            const res = await axios.post(
+                `${process.env.REACT_APP_BACKEND_URL}/api/insert`,
+                payload,
+            );
             console.log('Backend response:', res.data);
             onUploadComplete(res.data);
         } catch (error) {
