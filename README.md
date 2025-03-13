@@ -4,7 +4,7 @@ This is a project of large language model associated with knowledge base, or in 
 an RAG (Retrieval-Augmented Generation) application.
 
 ## Tech Stacks:
-- FastAPi
+- FastAPI
 - Milvus vector database
 - Knowledge Graph
 - Frontend: ReactJS
