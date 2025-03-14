@@ -110,16 +110,22 @@ class KnowledgeGraph:
         chunk: str,
     ) -> ResponseMessage[list[Triplet]]:
         """Construct graph from a given chunk."""
+        # Prepare messages for the LLM call
         messages = self._prepare_messages(chunk)
+
+        # Call the LLM with the prepared messages
         result = await call_llm(messages)
 
+        # Handle LLM failure
         if result is None:
             return self._handle_llm_failure()
 
+        # Extract and repair JSON from the LLM result
         json_result = self._extract_and_repair_json(result)
         if isinstance(json_result, ResponseMessage):
             return json_result  # This carries an error message
 
+        # Parse the triplets from the JSON result
         return self._parse_triplets(json_result)
 
     def _prepare_messages(self, chunk: str) -> list[dict[str, str]]:
