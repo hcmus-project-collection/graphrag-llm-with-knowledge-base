@@ -874,18 +874,21 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
         )
 
     logger.info(f"Augmented Prompt: {augmented_prompt}")
-
-    client = openai.AsyncOpenAI(
-        api_key="123",
-        base_url=const.OPENAI_BASE_URL,
-    )
+    if not const.OPENAI_BASE_URL:
+        openai.api_key = const.OPENAI_API_KEY
+        client = openai.AsyncOpenAI()
+    else:
+        client = openai.AsyncOpenAI(
+            api_key=const.OPENAI_API_KEY,
+            base_url=const.OPENAI_BASE_URL,
+        )
     response = await client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant. \n"
+                    "You are a helpful assistant.\n"
                     "Response in the following format.\n"
                     "{\n"
                     "'content': 'The content of the response',\n"
@@ -902,12 +905,20 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
         response_format={"type": "json_object"},
     )
     print(response.choices[0].message.content)
+    result = json.loads(response.choices[0].message.content)
 
+    # return [
+    #     QueryResult(
+    #         content=hit['entity']['content'],
+    #         reference=hit['entity']['reference'],
+    #         score=hit['score'],
+    #     )
+    #     for hit in hits
+    # ]
     return [
         QueryResult(
-            content=hit['entity']['content'],
-            reference=hit['entity']['reference'],
-            score=hit['score'],
-        )
-        for hit in hits
+            content=result["content"],
+            reference=result["reference"],
+            score=result["score"],
+        ),
     ]
