@@ -16,7 +16,7 @@ const QueryForm: React.FC<QueryFormProps> = ({ onQueryComplete }) => {
 
         const payload = {
             query,
-            top_k: topK,
+            top_k: 1,
             kb: ["kb0000"],
             threshold: 0.2,
         };
@@ -38,13 +38,13 @@ const QueryForm: React.FC<QueryFormProps> = ({ onQueryComplete }) => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
             />
-            <input
+            {/* <input
                 type="number"
                 placeholder="Top K results"
                 value={topK}
                 onChange={(e) => setTopK(Number(e.target.value))}
                 min={1}
-            />
+            /> */}
             <button type="submit" onClick={handleSubmit}>
                 Submit Query
             </button>
