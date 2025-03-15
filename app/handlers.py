@@ -5,6 +5,7 @@ import random
 import shutil
 from collections.abc import AsyncGenerator
 from pathlib import Path
+import openai
 
 import httpx
 from pymilvus import CollectionSchema, DataType, FieldSchema, MilvusClient
@@ -204,7 +205,6 @@ mk_cog_embedding_retry_wrapper_prioritized = retry(
     mk_cog_embedding_prioritized,
     max_retry=2,
     first_interval=2,
-    interval_multiply=2,
 )
 
 
@@ -761,7 +761,7 @@ async def drop_kb(kb: str) -> int:
 @log_execution_time
 @redis_kit.cache_for(interval_seconds=300 // 5)  # seconds
 async def run_query(req: QueryInputSchema) -> list[QueryResult]:
-    """Run a query against the embedding models."""
+    """Run a query against the embedding models and augment the LLM prompt."""
     if len(req.kb) == 0 or req.top_k <= 0:
         return []
 
@@ -863,6 +863,45 @@ async def run_query(req: QueryInputSchema) -> list[QueryResult]:
         key=lambda e: e['score'],
         reverse=True,
     )
+
+    # Augment the LLM prompt with the retrieved data
+    augmented_prompt = req.query + "\n\nRetrieved Data:\n"
+    for hit in hits:
+        augmented_prompt += (
+            f"- {hit['entity']['content']} "
+            f"(Reference: {hit['entity']['reference']} "
+            f"with score {hit['score']})\n"
+        )
+
+    logger.info(f"Augmented Prompt: {augmented_prompt}")
+
+    client = openai.AsyncOpenAI(
+        api_key="123",
+        base_url=const.OPENAI_BASE_URL,
+    )
+    response = await client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant. \n"
+                    "Response in the following format.\n"
+                    "{\n"
+                    "'content': 'The content of the response',\n"
+                    "'reference': 'The reference of the response',\n"
+                    "'score': 'The score of the response'\n"
+                    "}\n"
+                ),
+            },
+            {
+                "role": "user",
+                "content": augmented_prompt,
+            },
+        ],
+        response_format={"type": "json_object"},
+    )
+    print(response.choices[0].message.content)
 
     return [
         QueryResult(
