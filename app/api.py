@@ -46,7 +46,10 @@ async def insert(
     )
 
     return ResponseMessage[str](
-        result="successfully submitted documents",
+        result=(
+            "Successfully submitted documents. "
+            "For PDF files, the processing will be around 5 minutes."
+        ),
         status=APIStatus.OK,
     )
 

@@ -103,6 +103,10 @@ async def url_graph_chunking(
     knowledge_graph = get_knowledge_graph()
     chunks = await call_docling_server(url_or_texts, model_use.tokenizer)
 
+    logger.info(f"Number of chunks: {len(chunks)}")
+    for chunk in chunks:
+        logger.info(f"Chunk size: {len(chunk)}")
+
     futures = [
         asyncio.ensure_future(knowledge_graph.construct_graph_from_chunk(item))
         for item in chunks
@@ -326,6 +330,10 @@ async def process_text_input(
                 asyncio.ensure_future(embed_triplet(item, e, model_use))
                 for e in resp.result
             ])
+
+    logger.info(f"Number of text chunks: {len(texts)}")
+    for text in texts:
+        logger.info(f"Text chunk {text} with size: {len(text)}")
 
     return futures, failed
 
