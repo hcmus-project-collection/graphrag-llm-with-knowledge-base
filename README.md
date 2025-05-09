@@ -3,56 +3,117 @@
 This is a project of large language model associated with knowledge base, or in some sense, this is
 an RAG (Retrieval-Augmented Generation) application.
 
-## Tech Stacks:
-- FastAPI
-- Milvus vector database
-- Knowledge Graph
-- Frontend: ReactJS
+## Project Overview
 
-## Running the server
+This project implements a RAG (Retrieval-Augmented Generation) system that combines a Large Language Model with a knowledge base. The system uses Milvus as a vector database for efficient similarity search and includes a knowledge graph component for enhanced information retrieval.
+
+## Architecture
+
+### Backend Components
+- **FastAPI Server** (`server.py`): Main application server handling API requests
+- **Core Components** (`app/`):
+  - `api.py`: API route definitions
+  - `handlers.py`: Core business logic and data processing
+  - `graph_handlers.py`: Knowledge graph operations
+  - `models.py`: Data models and schemas
+  - `embedding.py`: Text embedding functionality
+  - `utils.py`: Utility functions
+  - `constants.py`: System constants and configurations
+
+### Frontend Components
+- **React Application** (`frontend/`):
+  - Modern web interface for interacting with the RAG system
+  - Built with React and TypeScript
+
+### Infrastructure
+- **Milvus Vector Database**: For efficient vector similarity search
+- **Docker Containers**: For easy deployment and scaling
+  - `docker-compose.yml`: Main service orchestration
+  - `milvus-docker-compose.yml`: Milvus database setup
+  - `models-docker-compose.yml`: ML models containerization
+
+## Tech Stack
+- Backend:
+  - FastAPI
+  - Milvus vector database
+  - Knowledge Graph
+  - Python 3.10+
+- Frontend:
+  - ReactJS
+  - TypeScript
+- Infrastructure:
+  - Docker
+  - Docker Compose
+
+## Getting Started
+
 ### System Requirements
-First of all, you need a Python (version 3.10 or later) installed. It is recommended to use a virtual environment, such as [conda](https://www.anaconda.com/docs/getting-started/miniconda/main) or [uv](https://astral.sh/blog/uv).
-You will also need Docker installed on your system.
+- Python 3.10 or later
+- Node.js (for frontend)
+- Docker and Docker Compose
+- Virtual environment (conda or uv recommended)
 
-### Install `conda` environment
-Check [this docs](https://www.anaconda.com/docs/getting-started/miniconda/main) for `conda` installation guide.
-After `conda` is installed, let's create a virtual environment for this project.
+### Installation Steps
 
+1. **Set up Python Environment**
 ```bash
 conda create -n llmkb python==3.12 -y
-```
-```bash
 conda activate llmkb
 ```
 
-### Setup Docker for Milvus
+2. **Configure Environment Variables**
 ```bash
+cp .env.template .env
+# Edit .env with your configuration
+```
 
-# for the latest version, checkout https://milvus.io/docs/install_standalone-docker-compose.md
-wget https://github.com/milvus-io/milvus/releases/download/v2.5.0-beta/milvus-standalone-docker-compose.yml -O docker-compose.yml
-```
-Build the Docker container
+3. **Start Milvus Database**
 ```bash
-docker-compose -f docker-compose.yml up -d
+docker-compose -f milvus-docker-compose.yml up -d
 ```
-### Install requirement packages
+
+4. **Install Backend Dependencies**
 ```bash
 pip install -r requirements.txt
 ```
-### Run the server
+
+5. **Start Backend Server**
 ```bash
 python -O server.py
 ```
 
-## Running the frontend
-### System Requirements
-You need to have Node.js installed on your system. You can download it from [here](https://nodejs.org/en/download/).
-### Install dependencies
+6. **Set up Frontend**
 ```bash
 cd frontend
+cp .env.template .env
 npm install
-```
-### Run the frontend
-```bash
 npm start
 ```
+
+## System Flow
+
+1. **Data Ingestion**
+   - Documents are processed and embedded
+   - Vectors are stored in Milvus
+   - Knowledge graph relationships are extracted
+
+2. **Query Processing**
+   - User queries are received through the API
+   - Query is embedded and matched against stored vectors
+   - Relevant context is retrieved from Milvus
+   - Knowledge graph provides additional context
+
+3. **Response Generation**
+   - LLM generates response using retrieved context
+   - Response is returned to the frontend
+
+## Development
+
+The project includes several Docker configurations for different components:
+- `docker-compose.yml`: Main application services
+- `milvus-docker-compose.yml`: Vector database setup
+- `models-docker-compose.yml`: ML models deployment
+
+## License
+
+See the [LICENSE](LICENSE) file for details.
