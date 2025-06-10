@@ -112,7 +112,6 @@ npm start
 The project includes several Docker configurations for different components:
 - `docker-compose.yml`: Main application services
 - `milvus-docker-compose.yml`: Vector database setup
-- `models-docker-compose.yml`: ML models deployment
 
 ## License
 
