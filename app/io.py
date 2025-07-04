@@ -12,6 +12,8 @@ import httpx
 import numpy as np
 from aiofiles import open as aio_open  # For async file operations
 from pymilvus import MilvusClient
+from docling.document_converter import DocumentConverter
+from docling.chunking import HybridChunker
 
 from app.utils import limit_asyncio_concurrency, sync2async
 from app.wrappers import milvus_kit
@@ -261,68 +263,43 @@ async def call_docling_server(
     max_chunk_size: int = const.MAX_CHUNK_SIZE,
     retry: int = 5,
 ) -> list[str]:
-    """Call docling server to chunk the file."""
+    """Use docling package to chunk the file."""
     if not Path(file_path).exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    logger.info(f"Sending {file_path} to {const.DOCLING_SERVER_URL}...")
+    logger.info(f"Processing {file_path} with docling package...")
 
-    for i in range(1 + retry):
-        timeout = time.time() + 600
+    try:
+        # Convert document using docling
+        converter = DocumentConverter()
+        result = await sync2async(converter.convert)(file_path)
+        doc = result.document
 
-        async with httpx.AsyncClient() as cli:
-            async with aio_open(file_path, 'rb') as fp:  # Async file open
-                file_content = await fp.read()  # Non-blocking read
+        # Use HybridChunker for better document-aware chunking
+        # We'll use default parameters for now but could potentially configure
+        # tokenizer based on embedding_model_name in the future
+        chunker = HybridChunker()
+        chunk_iter = chunker.chunk(dl_doc=doc)
 
-                resp = await cli.post(
-                    const.DOCLING_SERVER_URL + "/async-submit",
-                    files={'file': ('filename', file_content)},
-                    params={
-                        "min_chunk_size": min_chunk_size,
-                        "max_chunk_size": max_chunk_size,
-                        "tokenizer": embedding_model_name,
-                    },
-                    timeout=httpx.Timeout(120.0),
-                )
+        # Extract text from chunks and apply contextualization
+        chunks = []
+        for chunk in chunk_iter:
+            # Use contextualize to get the metadata-enriched text
+            enriched_text = chunker.contextualize(chunk=chunk)
 
-            if resp.status_code == 200:
-                _id = resp.json()['result']
+            # Filter chunks based on size constraints
+            # Note: Using character count as approximation for now
+            if len(enriched_text.strip()) >= min_chunk_size:
+                # If chunk is too large, we'll include it anyway as HybridChunker
+                # should handle tokenization-aware splitting
+                chunks.append(enriched_text.strip())
 
-                logger.info(
-                    f"File {file_path} is successfully sent. "
-                    "Awaiting for the result...",
-                )
+        logger.info(
+            f"Successfully split {file_path} into chunks! "
+            f"Total {len(chunks)} chunks.",
+        )
+        return chunks
 
-                while time.time() < timeout:
-                    resp = await cli.get(
-                        const.DOCLING_SERVER_URL + "/async-get",
-                        params={"request_id": _id},
-                        timeout=httpx.Timeout(30.0),
-                    )
-
-                    if resp.status_code == 200:
-                        resp_json = resp.json()
-                        result: dict = resp_json['result']
-
-                        if result["status"] in ["error", "not_found"]:
-                            msg = result.get("message")
-                            logger.info(
-                                f"Error while generating chunks for the "
-                                f"file {file_path}: {msg} "
-                                f"(status: {result['status']})",
-                            )
-                            break
-
-                        if result["status"] == "ok":
-                            res = result["chunks"]
-                            logger.info(
-                                f"Successfully split {file_path} into chunks! "
-                                f"Total {len(res)} chunks.",
-                            )
-                            return res
-
-                    await asyncio.sleep(5)  # Non-blocking sleep
-
-            await asyncio.sleep(2 ** i)  # Non-blocking exponential backoff
-
-    raise ChunkingFailedError(f"Chunking failed after all {retry} attempts")
+    except Exception as e:
+        logger.error(f"Error while generating chunks for file {file_path}: {e}")
+        raise ChunkingFailedError(f"Chunking failed: {e}")
