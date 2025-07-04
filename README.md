@@ -316,5 +316,8 @@ See the [LICENSE](LICENSE) file for details.
 Current version: **v1.0.0** ✨
 
 ## About us
-We are Van-Loc Nguyen and Dinh-Khoi Vo, Master students from [University of Science, VNUHCM](https://hcmus.edu.vn/).
-This is project for the subject MTH088 - Advanced Mathematics for AI.
+We are Van-Loc Nguyen and Dinh-Khoi Vo, Master's students from [University of Science, VNUHCM](https://hcmus.edu.vn/).
+This is the project for the subject MTH088 - Advanced Mathematics for AI.
+
+## Acknowledgments
+Special thanks for Do Tran Ngoc for his help on debugging.
