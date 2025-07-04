@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 async def call_llm_prioritized(messages: list[dict[str, str]]) -> str:
     """Call large language model with prioritized messages."""
     payload = {
-        "model": const.MODEL_NAME,
+                    "model": const.OPENAI_MODEL_ID,
         "messages": messages,
         "temperature": const.DEFAULT_LLM_TEMPERATURE,
         "seed": const.DEFAULT_LLM_SEED,
@@ -26,14 +26,14 @@ async def call_llm_prioritized(messages: list[dict[str, str]]) -> str:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {const.LLM_API_KEY}",
+                        "Authorization": f"Bearer {const.OPENAI_API_KEY}",
     }
 
     logger.debug(f"Payload: {payload}")
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            const.LLM_API_BASE + "/chat/completions",
+            const.OPENAI_API_BASE + "/chat/completions",
             headers=headers,
             json=payload,
             timeout=httpx.Timeout(300),

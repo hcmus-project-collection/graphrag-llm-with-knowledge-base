@@ -2,19 +2,19 @@
 
 import os
 
-SELF_HOSTED_EMBEDDING_URL = (
-    os.getenv("SELF_HOSTED_EMBEDDING_URL", "").rstrip("/")
+EMBEDDING_URL = (
+    os.getenv("EMBEDDING_URL", "").rstrip("/")
 )
-SELF_HOSTED_EMBEDDING_MODEL_ID = os.getenv("SELF_HOSTED_EMBEDDING_MODEL_ID")
+EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL_ID")
 TOKENIZER_MODEL_ID = os.getenv("TOKENIZER_MODEL_ID")
 
 MILVUS_HOST = os.getenv("MILVUS_HOST", "http://localhost")
 MILVUS_PORT = int(os.getenv("MILVUS_PORT", "19530"))
 
 MODEL_DIMENSION = int(os.getenv("MODEL_DIMENSION", "4096"))
-MODEL_NAME = os.getenv("MODEL_NAME")
-LLM_API_BASE = os.getenv("LLM_API_BASE", "").rstrip("/")
-LLM_API_KEY = os.getenv("LLM_API_KEY")
+OPENAI_MODEL_ID = os.getenv("OPENAI_MODEL_ID")
+OPENAI_API_BASE = os.getenv("OPENAI_API_BASE", "").rstrip("/")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEFAULT_LLM_MAX_TOKENS = os.getenv("DEFAULT_LLM_MAX_TOKENS") or 512
 DEFAULT_LLM_SEED = os.getenv("DEFAULT_LLM_SEED") or 42
 DEFAULT_LLM_TEMPERATURE = os.getenv("DEFAULT_LLM_TEMPERATURE") or 0.7
@@ -127,6 +127,4 @@ RELATION_SUFFIX = "-relation"
 
 
 MAX_NUM_CONCURRENT_LLM_CALL = 16
-DOCLING_SERVER_URL = os.getenv("DOCLING_SERVER_URL", "").rstrip("/")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "123")
