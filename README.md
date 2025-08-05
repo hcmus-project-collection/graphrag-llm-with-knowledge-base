@@ -243,3 +243,7 @@ This is the project for the subject MTH088 - Advanced Mathematics for AI.
 
 ## Acknowledgments
 Special thanks for Do Tran Ngoc for his help on debugging.
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Whether you're interested in fixing bugs, adding new features, improving documentation, or sharing ideas, your contributions are valuable to us.
