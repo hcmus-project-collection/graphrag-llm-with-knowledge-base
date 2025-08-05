@@ -1,5 +1,5 @@
 {
-  "name": "rag-chatbot",
+  "name": "graphrag-chatbot",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

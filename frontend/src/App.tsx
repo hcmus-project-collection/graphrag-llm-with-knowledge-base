@@ -22,7 +22,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      <h1>RAG Chatbot</h1>
+      <h1>GraphRAG Chatbot</h1>
       <div style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
         <UploadForm onUploadComplete={handleUploadComplete} />
         <PDFUploader onUploadComplete={handleUploadComplete} />

@@ -1,139 +1,61 @@
-# 🧠 Large Language Model with Knowledge Base
+# GraphRAG - Large Language Model with Knowledge Base
 
-An advanced RAG (Retrieval-Augmented Generation) system that combines Large Language Models with a sophisticated knowledge base featuring vector similarity search and knowledge graph extraction.
+This is GraphRAG, a project of large language model associated with knowledge base, or in some sense, this is
+an RAG (Retrieval-Augmented Generation) application with graph-based knowledge representation.
 
 ## 📋 Project Overview
 
-This project implements a comprehensive RAG system with the following key features:
+GraphRAG implements a RAG (Retrieval-Augmented Generation) system that combines a Large Language Model with a knowledge base. The system uses Milvus as a vector database for efficient similarity search and includes a knowledge graph component for enhanced information retrieval.
 
-- **🕸️ Knowledge Graph Extraction**: Automatically extracts structured relationships (triplets) from documents
-- **🔍 Vector Similarity Search**: Uses Milvus vector database for efficient semantic search
-- **📄 Multi-modal Document Processing**: Supports PDF files and text input with advanced chunking
-- **⚡ Real-time Query Processing**: Fast retrieval with Redis caching and background processing
-- **💻 Modern Web Interface**: React-based frontend for document upload and querying
+## Architecture
 
-## 🏗️ Architecture
+### Backend Components
+- **FastAPI Server** (`server.py`): Main application server handling API requests
+- **Core Components** (`app/`):
+  - `api.py`: API route definitions
+  - `handlers.py`: Core business logic and data processing
+  - `graph_handlers.py`: Knowledge graph operations
+  - `models.py`: Data models and schemas
+  - `embedding.py`: Text embedding functionality
+  - `utils.py`: Utility functions
+  - `constants.py`: System constants and configurations
 
-### 🔧 Core Components
+### Frontend Components
+- **React Application** (`frontend/`):
+  - Modern web interface for interacting with the GraphRAG system
+  - Built with React and TypeScript
 
-#### 🐍 Backend (`app/`)
-- **`server.py`**: FastAPI application server with CORS support and health monitoring
-- **`api.py`**: REST API endpoints for document insertion, querying, and knowledge base management
-- **`handlers.py`**: Core business logic including document processing, embedding generation, and query execution
-- **`graph_handlers.py`**: Knowledge graph extraction using LLM-powered triplet extraction
-- **`models.py`**: Pydantic data models and API schemas
-- **`embedding.py`**: Text embedding model configuration and management
-- **`constants.py`**: System configuration and environment variable handling
-- **`utils.py`**: Utility functions for async processing, batching, and file operations
-- **`state.py`**: Application state management
-- **`io.py`**: File I/O operations and external service integrations
+### Infrastructure
+- **Milvus Vector Database**: For efficient vector similarity search
+- **Docker Containers**: For easy deployment and scaling
+  - `docker-compose.yml`: Main service orchestration
+  - `milvus-docker-compose.yml`: Milvus database setup
+  - `models-docker-compose.yml`: ML models containerization
 
-#### 🔄 Wrappers (`app/wrappers/`)
-- **`milvus_kit.py`**: Milvus vector database connection management
-- **`redis_kit.py`**: Redis caching layer with decorators
-- **`log_decorators.py`**: Logging and performance monitoring decorators
+## Tech Stack
+- Backend:
+  - FastAPI
+  - Milvus vector database
+  - Knowledge Graph
+  - Python 3.10+
+- Frontend:
+  - ReactJS
+  - TypeScript
+- Infrastructure:
+  - Docker
+  - Docker Compose
 
-#### ⚛️ Frontend (`frontend/`)
-- **React TypeScript Application**: Modern web interface
-- **Components**:
-  - `UploadForm.tsx`: Text document upload
-  - `PDFUploader.tsx`: PDF file upload with Cloudinary integration
-  - `QueryForm.tsx`: Search interface
-  - `Output.tsx`: Results display
+## Getting Started
 
-#### 🏢 Infrastructure
-- **🗄️ Milvus Vector Database**: High-performance vector similarity search
-- **⚡ Redis**: Caching layer for query results and performance optimization
-- **📖 Docling Server**: PDF processing and intelligent chunking
-- **🪣 MinIO**: Object storage for Milvus
-- **🔑 etcd**: Metadata storage for Milvus cluster
+### System Requirements
+- Python 3.10 or later
+- Node.js (for frontend)
+- Docker and Docker Compose
+- Virtual environment (conda or uv recommended)
 
-## 🛠️ Tech Stack
+### Installation Steps
 
-### 🐍 Backend
-- **⚡ FastAPI** (v0.115.5): High-performance async web framework
-- **🗄️ Milvus** (v2.5.0): Vector database for similarity search
-- **🔴 Redis**: In-memory caching and session storage
-- **🐍 PyMilvus** (v2.5.3): Python client for Milvus
-- **✅ Pydantic** (v2.9.2): Data validation and serialization
-- **📄 Docling**: Advanced PDF processing and chunking
-- **⏰ Schedule**: Background task scheduling
-- **🌐 HTTPX**: Async HTTP client for external API calls
-
-### ⚛️ Frontend
-- **⚛️ React** (v19.0.0): Modern UI framework
-- **📘 TypeScript** (v4.9.5): Type-safe JavaScript
-- **🔗 Axios** (v1.8.2): HTTP client for API communication
-
-### 🐳 Infrastructure
-- **🐳 Docker & Docker Compose**: Containerized deployment
-- **🦄 Uvicorn**: ASGI server for FastAPI
-- **🪣 MinIO**: S3-compatible object storage
-- **🔑 etcd**: Distributed key-value store
-
-## 🚀 API Endpoints
-
-### 📄 Document Management
-- **📤 POST `/api/insert`**: Insert documents (text or file URLs) into knowledge base
-- **🔄 POST `/api/update`**: Update existing documents in knowledge base
-- **🗑️ DELETE `/api/delete`**: Delete all documents from a knowledge base
-
-### 🔍 Query Operations
-- **🔎 POST `/api/query`**: Semantic search with configurable parameters
-- **📋 GET `/api/sample`**: Get sample documents from knowledge base
-
-### 🛠️ Utilities
-- **📥 GET `/api/export`**: Export collection data (admin endpoint)
-- **❤️ GET `/`**: Health check endpoint
-
-### ⚙️ Query Parameters
-- `top_k`: Number of similar documents to retrieve
-- `threshold`: Similarity threshold for filtering results
-- `kb`: Knowledge base identifier(s)
-
-## 🕸️ Knowledge Graph Features
-
-The system implements sophisticated knowledge graph extraction:
-
-### 🔗 Triplet Extraction
-- **🔍 Automatic Relationship Discovery**: Extracts (subject, relation, object) triplets from text
-- **🤖 LLM-Powered Analysis**: Uses OpenAI-compatible APIs for intelligent relationship identification
-- **🗄️ Structured Storage**: Stores entities and relations separately with dedicated suffixes
-- **📈 Query Enhancement**: Improves search relevance through entity and relationship context
-
-### 🏷️ Named Entity Recognition
-- **👤 Entity Extraction**: Identifies persons, locations, organizations, and key concepts
-- **✨ Query Refinement**: Enhances search queries with extracted entities
-- **🎯 Contextual Analysis**: Preserves meaningful phrases and multi-word expressions
-
-## ⚙️ Configuration
-
-### 🔐 Required Environment Variables
-
-#### 🐍 Backend Configuration (`.env`)
-```bash
-# 🤖 Embedding Model Configuration
-EMBEDDING_URL=your-embedding-service-url
-EMBEDDING_MODEL_ID=your-embedding-model-id
-TOKENIZER_MODEL_ID=your-tokenizer-model-id
-MODEL_DIMENSION=4096
-
-# 🧠 LLM Configuration (for Knowledge Graph)
-OPENAI_API_KEY=your-llm-api-key
-OPENAI_API_BASE=your-llm-api-base-url
-OPENAI_MODEL_ID=your-model-name
-
-# 🗄️ Database Configuration
-MILVUS_HOST=http://localhost:19530
-
-# ⚡ Optional Performance Tuning
-DEFAULT_BATCH_SIZE=8
-DEFAULT_TOP_K=1
-DEFAULT_CONCURRENT_EMBEDDING_REQUESTS_LIMIT=64
-DEFAULT_INSERT_BATCH_SIZE=128
-```
-
-#### ⚛️ Frontend Configuration (`frontend/.env`)
+1. **Set up Python Environment**
 ```bash
 REACT_APP_BACKEND_URL=http://localhost:8000
 REACT_APP_CLOUDINARY_PRESET=your-cloudinary-preset

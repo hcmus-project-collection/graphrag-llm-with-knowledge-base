@@ -1,4 +1,6 @@
-# Getting Started with Create React App
+# GraphRAG Frontend
+
+This is the frontend component of GraphRAG, a knowledge graph-based RAG (Retrieval-Augmented Generation) system.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

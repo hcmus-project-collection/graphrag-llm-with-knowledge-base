@@ -1,6 +1,6 @@
 {
-  "short_name": "LLM with KB",
-  "name": "LLM with Knowledge Base",
+  "short_name": "GraphRAG",
+  "name": "GraphRAG - LLM with Knowledge Base",
   "icons": [
     {
       "src": "favicon.ico",

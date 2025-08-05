@@ -31,7 +31,7 @@ const QueryForm: React.FC<QueryFormProps> = ({ onQueryComplete }) => {
 
     return (
         <div className="form-container">
-            <h2>Query Knowledge Base</h2>
+            <h2>Query GraphRAG Knowledge Base</h2>
             <input
                 type="text"
                 placeholder="Enter your query"

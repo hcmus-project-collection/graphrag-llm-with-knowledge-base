@@ -41,7 +41,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onUploadComplete }) => {
                 onChange={(e) => setFileUrl(e.target.value)}
             />
             <textarea
-                placeholder="Or enter text to add to knowledge base"
+                placeholder="Or enter text to add to GraphRAG knowledge base"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
             />
